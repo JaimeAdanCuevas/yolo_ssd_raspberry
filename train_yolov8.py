@@ -127,7 +127,7 @@ test_image = "/content/RaspberrySet/split/test/images/IMG_3552.JPEG"
 
 try:
     # Train model
-    model = train_yolov8(data_yaml, output_dir, epochs=50, batch_size=16, img_size=640)
+    model = train_yolov8(data_yaml, output_dir, epochs=100, batch_size=64, img_size=640)
 
     # Visualize a test image
     output_path = visualize_prediction(model, test_image, output_dir)

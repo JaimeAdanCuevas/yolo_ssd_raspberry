@@ -255,7 +255,7 @@ try:
 
     # Train with augmentations
     logger.info("Starting training with augmentations")
-    model = train_yolov8_with_augmentation(data_yaml, output_dir, epochs=50, batch_size=16, img_size=640)
+    model = train_yolov8_with_augmentation(data_yaml, output_dir, epochs=100, batch_size=64, img_size=640)
 
     # Visualize a test image
     output_path = visualize_prediction(model, test_image, output_dir)
