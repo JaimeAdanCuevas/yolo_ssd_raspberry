@@ -11,7 +11,7 @@ from IPython.display import Image
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-def train_yolov8(data_yaml: str, output_dir: str, epochs: int = 50, batch_size: int = 16, img_size: int = 640):
+def train_yolov8(data_yaml: str, output_dir: str, epochs: int = 100, batch_size: int = 64, img_size: int = 640):
     """
     Train YOLOv8 on the RaspberrySet dataset.
 
@@ -27,7 +27,7 @@ def train_yolov8(data_yaml: str, output_dir: str, epochs: int = 50, batch_size: 
 
     # Load YOLOv8n model
     try:
-        model = YOLO("yolov8n.pt")  # Pre-trained weights
+        model = YOLO("yolov8s.pt")  # Pre-trained weights
         logger.info("Loaded YOLOv8n model")
     except Exception as e:
         logger.error(f"Failed to load YOLOv8n model: {e}")
@@ -46,7 +46,7 @@ def train_yolov8(data_yaml: str, output_dir: str, epochs: int = 50, batch_size: 
             exist_ok=True,
             optimizer="SGD",
             lr0=0.01,
-            patience=10,
+            patience=20,
             verbose=True
         )
         logger.info("Training completed")

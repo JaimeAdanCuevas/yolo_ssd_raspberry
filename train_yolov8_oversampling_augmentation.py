@@ -31,11 +31,13 @@ def oversample_ripe_berries(train_images_dir, train_labels_dir):
         if not image_file.exists():
             logger.warning(f"Image {image_file} not found for label {label_file}")
             continue
-        copy_label = label_file.parent / f"{label_file.stem}_copy{label_file.suffix}"
-        copy_image = image_file.parent / f"{image_file.stem}_copy{image_file.suffix}"
-        shutil.copy(label_file, copy_label)
-        shutil.copy(image_file, copy_image)
-        logger.info(f"Copied {image_file} to {copy_image} and {label_file} to {copy_label}")
+        # Create two copies
+        for i in range(1, 3):  # 1 and 2 for _copy1, _copy2
+            copy_label = label_file.parent / f"{label_file.stem}_copy{i}{label_file.suffix}"
+            copy_image = image_file.parent / f"{image_file.stem}_copy{i}{image_file.suffix}"
+            shutil.copy(label_file, copy_label)
+            shutil.copy(image_file, copy_image)
+            logger.info(f"Copied {image_file} to {copy_image} and {label_file} to {copy_label}")
     
     new_count = len(list(train_images_dir.glob("*.JPEG")))
     logger.info(f"New training set size: {new_count} images")
@@ -129,14 +131,14 @@ class RipeBerriesDataset:
         
         return img, boxes, class_labels
 
-def train_yolov8_with_augmentation(data_yaml, output_dir, epochs=50, batch_size=16, img_size=640):
+def train_yolov8_with_augmentation(data_yaml, output_dir, epochs=100, batch_size=64, img_size=640):
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Load YOLOv8n model
     try:
-        model = YOLO("yolov8n.pt")
-        logger.info("Loaded YOLOv8n model")
+        model = YOLO("yolov8s.pt")
+        logger.info("Loaded YOLOv8s model")
     except Exception as e:
         logger.error(f"Failed to load YOLOv8n model: {e}")
         raise
@@ -154,7 +156,7 @@ def train_yolov8_with_augmentation(data_yaml, output_dir, epochs=50, batch_size=
             exist_ok=True,
             optimizer="SGD",
             lr0=0.01,
-            patience=10,
+            patience=20,
             verbose=True,
             augment=True,
             hsv_h=0.015,

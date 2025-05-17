@@ -2,3 +2,4 @@ ultralytics
 albumentations
 opencv-python
 matplotlib
+ipython
