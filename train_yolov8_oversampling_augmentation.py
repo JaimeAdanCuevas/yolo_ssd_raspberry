@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from IPython.display import Image
 import albumentations as A
 import shutil
+import torch
+import yaml
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -18,11 +20,21 @@ def oversample_ripe_berries(train_images_dir, train_labels_dir):
     train_images_dir = Path(train_images_dir)
     train_labels_dir = Path(train_labels_dir)
     
+    # Remove existing copies
+    for copy_file in train_images_dir.glob("*_copy[1-2].JPEG"):
+        copy_file.unlink()
+        logger.info(f"Removed {copy_file}")
+    for copy_label in train_labels_dir.glob("*_copy[1-2].txt"):
+        copy_label.unlink()
+        logger.info(f"Removed {copy_label}")
+    
     ripe_berries_files = []
     for label_file in train_labels_dir.glob("*.txt"):
+        if "_copy" in label_file.name:
+            continue
         with open(label_file, "r") as f:
             for line in f:
-                if line.startswith("4 "):  # Class ID 4 = ripe_berries
+                if line.startswith("3 "):  # Class ID 3 = Ripe Berries
                     ripe_berries_files.append(label_file)
                     break
     
@@ -31,8 +43,7 @@ def oversample_ripe_berries(train_images_dir, train_labels_dir):
         if not image_file.exists():
             logger.warning(f"Image {image_file} not found for label {label_file}")
             continue
-        # Create two copies
-        for i in range(1, 3):  # 1 and 2 for _copy1, _copy2
+        for i in range(1, 3):
             copy_label = label_file.parent / f"{label_file.stem}_copy{i}{label_file.suffix}"
             copy_image = image_file.parent / f"{image_file.stem}_copy{i}{image_file.suffix}"
             shutil.copy(label_file, copy_label)
@@ -46,34 +57,14 @@ def oversample_ripe_berries(train_images_dir, train_labels_dir):
 # Define augmentation pipeline for ripe_berries images
 def get_ripe_berries_augmentation():
     return A.Compose([
-        A.HueSaturationValue(
-            hue_shift_limit=20,
-            sat_shift_limit=30,
-            val_shift_limit=20,
-            p=0.5
-        ),
-        A.RandomBrightnessContrast(
-            brightness_limit=0.2,
-            contrast_limit=0.2,
-            p=0.5
-        ),
-        A.Rotate(
-            limit=15,
-            p=0.5
-        ),
+        A.HueSaturationValue(hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20, p=0.5),
+        A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),
+        A.Rotate(limit=15, p=0.5),
         A.HorizontalFlip(p=0.5),
         A.VerticalFlip(p=0.5),
         A.Blur(blur_limit=3, p=0.3),
-        A.CLAHE(
-            clip_limit=4.0,
-            tile_grid_size=(8, 8),
-            p=0.3
-        ),
-    ], bbox_params=A.BboxParams(
-        format="yolo",
-        label_fields=["class_labels"],
-        min_visibility=0.3
-    ))
+        A.CLAHE(clip_limit=4.0, tile_grid_size=(8, 8), p=0.3),
+    ], bbox_params=A.BboxParams(format="yolo", label_fields=["class_labels"], min_visibility=0.3))
 
 # Custom dataset loader for selective augmentation
 class RipeBerriesDataset:
@@ -89,7 +80,7 @@ class RipeBerriesDataset:
         for label_file in self.labels_dir.glob("*.txt"):
             with open(label_file, "r") as f:
                 for line in f:
-                    if line.startswith("4 "):  # Class ID 4 = ripe_berries
+                    if line.startswith("3 "):  # Class ID 3 = Ripe Berries
                         img_name = label_file.name.replace(".txt", ".JPEG")
                         ripe_berries_images.append(img_name)
                         break
@@ -101,12 +92,9 @@ class RipeBerriesDataset:
     def __getitem__(self, idx):
         img_path = self.image_files[idx]
         label_path = self.labels_dir / img_path.name.replace(".JPEG", ".txt")
-        
-        # Load image
         img = cv2.imread(str(img_path))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
-        # Load labels
         boxes = []
         class_labels = []
         if label_path.exists():
@@ -118,13 +106,8 @@ class RipeBerriesDataset:
                     boxes.append([x_center, y_center, width, height])
                     class_labels.append(class_id)
         
-        # Apply augmentations for ripe_berries images
         if img_path.name in self.ripe_berries_images and self.augmentation:
-            augmented = self.augmentation(
-                image=img,
-                bboxes=boxes,
-                class_labels=class_labels
-            )
+            augmented = self.augmentation(image=img, bboxes=boxes, class_labels=class_labels)
             img = augmented["image"]
             boxes = augmented["bboxes"]
             class_labels = augmented["class_labels"]
@@ -135,24 +118,28 @@ def train_yolov8_with_augmentation(data_yaml, output_dir, epochs=100, batch_size
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Load YOLOv8n model
+    # Load data.yaml to get class names
+    with open(data_yaml, "r") as f:
+        data_config = yaml.safe_load(f)
+    class_names = data_config["names"]
+    logger.info(f"Loaded {len(class_names)} classes: {class_names}")
+
     try:
-        model = YOLO("yolov8s.pt")
-        logger.info("Loaded YOLOv8s model")
+        model = YOLO("yolov8m.pt")
+        logger.info("Loaded YOLOv8m model")
     except Exception as e:
-        logger.error(f"Failed to load YOLOv8n model: {e}")
+        logger.error(f"Failed to load YOLOv8m model: {e}")
         raise
 
-    # Train with custom augmentations
     try:
         results = model.train(
             data=data_yaml,
             epochs=epochs,
             batch=batch_size,
             imgsz=img_size,
-            device=0,
+            device=0 if torch.cuda.is_available() else "cpu",
             project=str(output_dir),
-            name="yolov8_raspberry_oversampled_augmented",
+            name="yolov8m_raspberry_oversampled_augmented",
             exist_ok=True,
             optimizer="SGD",
             lr0=0.01,
@@ -165,25 +152,25 @@ def train_yolov8_with_augmentation(data_yaml, output_dir, epochs=100, batch_size
             degrees=0.0,
             fliplr=0.5,
             flipud=0.0,
-            mosaic=1.0
+            mosaic=0.5  # Reduced to balance albumentations
         )
         logger.info("Training completed")
     except Exception as e:
         logger.error(f"Training failed: {e}")
         raise
 
-    # Save best model
-    best_model_path = output_dir / "yolov8_raspberry_oversampled_augmented" / "weights" / "best.pt"
+    best_model_path = output_dir / "yolov8m_raspberry_oversampled_augmented" / "weights" / "best.pt"
+    results_csv = output_dir / "yolov8m_raspberry_oversampled_augmented" / "results.csv"
     logger.info(f"Best model saved at {best_model_path}")
+    logger.info(f"Training metrics saved at {results_csv}")
 
-    # Evaluate on validation set
     try:
-        metrics = model.val()
-        logger.info(f"Validation metrics: mAP@50: {metrics.box.map50:.4f}, mAP@50:95: {metrics.box.map:.4f}")
+        metrics = model.val(data=data_yaml, split="test")
+        logger.info(f"Test mAP@50: {metrics.box.map50:.4f}, mAP@50:95: {metrics.box.map:.4f}")
         for i, ap in enumerate(metrics.box.maps):
-            logger.info(f"Class {model.names[i]} AP@50: {ap:.4f}")
+            logger.info(f"Class {class_names[i]} AP@50: {ap:.4f}")
     except Exception as e:
-        logger.error(f"Validation failed: {e}")
+        logger.error(f"Test validation failed: {e}")
 
     return model
 
@@ -201,7 +188,7 @@ def visualize_prediction(model, image_path, output_dir):
             boxes = result.boxes
             for box in boxes:
                 cls_id = int(box.cls.item())
-                if result.names[cls_id] == "ripe_berries":
+                if result.names[cls_id] == "Ripe Berries":  # Match data.yaml
                     ripe_berries_count += 1
                 x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())
                 conf = box.conf.item()
@@ -219,11 +206,11 @@ def visualize_prediction(model, image_path, output_dir):
         plt.figure(figsize=(10, 10))
         plt.imshow(img)
         plt.axis("off")
-        plt.title(f"Prediction: {ripe_berries_count} ripe_berries")
+        plt.title(f"Prediction: {ripe_berries_count} Ripe Berries")
         output_path = output_dir / f"prediction_{Path(image_path).name}"
         plt.savefig(output_path, bbox_inches="tight")
         plt.close()
-        logger.info(f"Saved prediction visualization at {output_path} with {ripe_berries_count} ripe_berries")
+        logger.info(f"Saved prediction visualization at {output_path} with {ripe_berries_count} Ripe Berries")
 
         return output_path
     except Exception as e:
@@ -235,7 +222,7 @@ try:
     # Define paths
     data_yaml = "/content/RaspberrySet/split/data.yaml"
     output_dir = "/content/drive/MyDrive/RaspberrySet/runs"
-    test_image = "/content/RaspberrySet/split/test/images/IMG_3552.JPEG"
+    test_image = "/content/RaspberrySet/split/test/images/IMG_3532.JPEG"
     train_images_dir = "/content/RaspberrySet/split/train/images"
     train_labels_dir = "/content/RaspberrySet/split/train/labels"
 
@@ -250,7 +237,7 @@ try:
             raise FileNotFoundError("No test images found")
 
     # Oversample ripe_berries images
-    logger.info("Starting oversampling of ripe_berries images")
+    logger.info("Starting oversampling of Ripe Berries images")
     new_train_size = oversample_ripe_berries(train_images_dir, train_labels_dir)
 
     # Train with augmentations
@@ -260,6 +247,6 @@ try:
     # Visualize a test image
     output_path = visualize_prediction(model, test_image, output_dir)
     if output_path:
-        display(Image(str(output_path)))
+        logger.info(f"Visualized prediction saved at {output_path}")
 except Exception as e:
     logger.error(f"Error during oversampling, training, or prediction: {e}")

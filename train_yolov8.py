@@ -28,9 +28,9 @@ def train_yolov8(data_yaml: str, output_dir: str, epochs: int = 100, batch_size:
     # Load YOLOv8n model
     try:
         model = YOLO("yolov8s.pt")  # Pre-trained weights
-        logger.info("Loaded YOLOv8n model")
+        logger.info("Loaded YOLOv8s model")
     except Exception as e:
-        logger.error(f"Failed to load YOLOv8n model: {e}")
+        logger.error(f"Failed to load YOLOv8s model: {e}")
         raise
 
     # Train model

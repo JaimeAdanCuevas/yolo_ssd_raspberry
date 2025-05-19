@@ -3,3 +3,4 @@ albumentations
 opencv-python
 matplotlib
 ipython
+scikit-learn
