@@ -9,3 +9,4 @@ torchvision
 pyyaml 
 pycocotools
 ssd
+torchmetrics
