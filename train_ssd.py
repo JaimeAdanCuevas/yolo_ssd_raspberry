@@ -17,7 +17,9 @@ from torchmetrics.detection import MeanAveragePrecision
 from torch.optim import SGD
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import time
+from torch.optim.lr_scheduler import LinearLR, ReduceLROnPlateau
 import random
+from torch.optim.lr_scheduler import StepLR
 
 # Configure logging
 logging.basicConfig(
@@ -304,7 +306,9 @@ class SSDDataset(Dataset):
                 image=img,
                 bboxes=boxes,
                 class_labels=labels
-            )
+             )
+            if not transformed["bboxes"]:
+                logger.warning(f"Augmentation remove all boxes for {img_path.name}")
             img = transformed["image"]
             boxes = transformed["bboxes"]
             labels = transformed["class_labels"]
@@ -427,11 +431,12 @@ def train_ssd(data_yaml, output_dir, epochs=100, batch_size=64, img_size=300):
 
     params = [p for p in model.parameters() if p.requires_grad]
     accum_iter = 4
-    max_grad_norm = 2.0
+    max_grad_norm = 5.0
     
     # Optimizer
     optimizer = SGD(params, lr=0.004, momentum=0.9, weight_decay=0.0005, nesterov=True)
     scheduler = ReduceLROnPlateau(optimizer, mode='max', patience=5, factor=0.5, verbose=True)
+    warmup_scheduler = LinearLR(optimizer, start_factor=0.1, end_factor=1.0, total_iters=5)
     
     logger.info("Starting training...")
     
@@ -441,6 +446,9 @@ def train_ssd(data_yaml, output_dir, epochs=100, batch_size=64, img_size=300):
         epoch_loss = 0.0
         optimizer.zero_grad()
         
+        if epoch < 5:
+            warmup_scheduler.step()
+
         for batch_idx, (images, targets) in enumerate(train_loader):
             # Skip batches with invalid data
             if any(len(t["boxes"]) == 0 for t in targets):
@@ -457,6 +465,14 @@ def train_ssd(data_yaml, output_dir, epochs=100, batch_size=64, img_size=300):
             if torch.isnan(losses):
                 logger.error("NaN loss detected, skipping batch")
                 continue
+            
+            skipped_batches = 0
+            if any(len(t["boxes"]) == 0 for t in targets):
+                skipped_batches += 1
+                logger.warning(f"Skipping batch {batch_idx} with empty targets (total: {skipped_batches})")
+                continue
+            
+            logger.info(f"Epoch {epoch+1}: Skipped {skipped_batches} batches")
 
             # Gradient accumulation
             losses = losses / accum_iter
@@ -477,8 +493,8 @@ def train_ssd(data_yaml, output_dir, epochs=100, batch_size=64, img_size=300):
             # Gradient clipping
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
 
-            optimizer.step()
-            optimizer.zero_grad()
+            #optimizer.step()
+            #optimizer.zero_grad()
             
             # Stability checks
             with torch.no_grad():
@@ -487,14 +503,8 @@ def train_ssd(data_yaml, output_dir, epochs=100, batch_size=64, img_size=300):
                         logger.error(f"NaN gradients in {name}")
                         raise RuntimeError("NaN gradients detected")
             
-            current_loss = losses.is_item() * accum_iter
+            current_loss = losses.item() * accum_iter
             epoch_loss += losses.item()
-
-            logger.debug(
-                f"Epoch {epoch+1} Batch {batch_idx} | "
-                f"Loss: {current_loss:.4f} | "
-                f"Grad Norm: {max(p.grad.abs().max() for p in model.parameters() if p.grad is not None):.4f}"
-            )
             
             # Batch logging with numerical sanity checks
             if batch_idx % 10 == 0:
@@ -503,7 +513,7 @@ def train_ssd(data_yaml, output_dir, epochs=100, batch_size=64, img_size=300):
                 logger.debug(f"Weight norms: {[p.data.norm().item() for p in model.parameters()][:3]}")
         
         # Validation and learning rate adjustment
-        val_metrics = evaluate_ssd(model, data_yaml, img_size)
+        val_metrics = evaluate_ssd(model, data_yaml, img_size, split='val')
         scheduler.step(val_metrics['map'])
         
         avg_loss = epoch_loss / len(train_loader)
@@ -529,14 +539,14 @@ def train_ssd(data_yaml, output_dir, epochs=100, batch_size=64, img_size=300):
     return model
 
 # -------------------- Evaluation --------------------
-def evaluate_ssd(model, data_yaml, img_size=300):
+def evaluate_ssd(model, data_yaml, img_size=300, split='val'):
     model.eval()
     device = next(model.parameters()).device
     
     with open(data_yaml, 'r') as f:
         data_config = yaml.safe_load(f)
     
-    test_images_dir = Path(data_config['test'])
+    test_images_dir = Path(data_config[split])
     test_labels_dir = test_images_dir.parent.parent / test_images_dir.parent.name / 'labels'
     
     test_dataset = SSDDataset(
@@ -548,7 +558,7 @@ def evaluate_ssd(model, data_yaml, img_size=300):
     
     test_loader = DataLoader(
         test_dataset,
-        batch_size=8,
+        batch_size=16,
         shuffle=False,
         num_workers=0,
         collate_fn=lambda batch: tuple(zip(*batch))
@@ -612,7 +622,7 @@ if __name__ == "__main__":
         
         # Final evaluation
         logger.info("Running final evaluation")
-        metrics = evaluate_ssd(ssd_model, DATA_YAML)
+        metrics = evaluate_ssd(ssd_model, DATA_YAML, split='test')
         logger.info(f"Final mAP@50: {metrics['map50']:.4f}")
         logger.info(f"Final mAP@75: {metrics['map75']:.4f}")
         logger.info(f"Final mAP: {metrics['map']:.4f}")
