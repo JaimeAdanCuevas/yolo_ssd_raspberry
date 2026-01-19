@@ -73,7 +73,10 @@ def split_dataset(image_dir: str, annotation_dir: str, output_dir: str, classes_
     # Verify splits
     split_counts = {}
     for split in splits:
-        img_count = len(list((output_dir / split / "images").glob("*.[jJ][pP][eE][gG]")))
+        img_count = len([
+            f for f in (output_dir / split / "images").iterdir()
+            if f.suffix.lower() in (".jpg", ".jpeg", ".png")
+        ])
         lab_count = len(list((output_dir / split / "labels").glob("*.txt")))
         ripe_berries_count = len([f for f in (output_dir / split / "labels").glob("*.txt") if any(line.startswith("3 ") for line in open(f))])
         split_counts[split] = {"images": img_count, "labels": lab_count, "ripe_berries": ripe_berries_count}
@@ -94,10 +97,10 @@ names: {class_names}
     return split_counts
 
 if __name__ == "__main__":
-    image_dir = "/content/RaspberrySet/images"
-    annotation_dir = "/content/RaspberrySet/annotations"
-    output_dir = "/content/RaspberrySet/split"
-    classes_file = "/content/RaspberrySet/classes.txt"
+    image_dir = "/home/root/dataset/DATASET2K/images"
+    annotation_dir = "/home/root/dataset/DATASET2K/labels"
+    output_dir = "/home/root/dataset/DATASET2K/DATASET2K_split"
+    classes_file = "/home/root/dataset/DATASET2K/classes.txt"
 
     try:
         split_counts = split_dataset(image_dir, annotation_dir, output_dir, classes_file)
