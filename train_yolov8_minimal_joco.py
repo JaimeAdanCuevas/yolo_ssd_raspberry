@@ -1,64 +1,65 @@
-# train_optimized_cpu.py
-from ultralytics import YOLO
 from pathlib import Path
-import logging
+from ultralytics import YOLO
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-log = logging.getLogger(__name__)
+# -----------------------------
+# Dataset
+# -----------------------------
+DATASET_PATH = Path("/home/root/dataset/DATASET2K/DATASET2K_split")
+DATA_YAML = DATASET_PATH / "data_final.yaml"  # 4 clases merged
 
-def train_optimized_cpu():
-    data_path = "/home/root/dataset/DATASET2K/DATASET2K_split/data.yaml"
-    
-    log.info("=== OPTIMIZED CPU TRAINING ===")
-    
-    # Use smaller model for CPU training
-    model = YOLO("yolov8s.pt")  # Small model is much faster on CPU
-    
+# -----------------------------
+# Entrenamiento YOLOv8
+# -----------------------------
+def train_yolo(model_type="m", epochs=100, batch=12, imgsz=640):
+
+    model = YOLO(f"yolov8{model_type}.pt")
+
     results = model.train(
-        data="/home/root/dataset/DATASET2K/DATASET2K_split/data.yaml",
-        epochs=80,
-        batch=16,
-        imgsz=640,
+        data=str(DATA_YAML),
+        epochs=epochs,
+        batch=batch,
+        imgsz=imgsz,
         device="cpu",
         project="runs",
-        name="yolov8s_base_final",
+        name="yolov8m_merged_boton-green_darkred-focus_oversampling_augmentation",
         exist_ok=True,
 
         optimizer="SGD",
-        lr0=0.01,
+        lr0=0.008,
         lrf=0.01,
         momentum=0.937,
-        weight_decay=5e-4,
+        weight_decay=0.0005,
 
+        patience=20,
         warmup_epochs=3,
-        patience=15,
-        cos_lr=True,
 
-        # Augmentación ligera (fondo verde)
         augment=True,
-        mosaic=0.2,
+        mosaic=0.15,
+        close_mosaic=10,
         mixup=0.0,
-        copy_paste=0.0,
+        copy_paste=0.05,
 
         fliplr=0.5,
         flipud=0.0,
-
-        degrees=3.0,
-        translate=0.03,
+        degrees=10,
+        translate=0.05,
         scale=0.15,
         shear=0.0,
         perspective=0.0,
 
         workers=8,
-        cache=False,
         amp=False,
+        verbose=True,
         plots=True,
-        save_period=20,
+        save_period=25,
         val=True,
     )
-    
-    log.info("✅ Training completed!")
-    return model
 
+    return results
+
+
+# -----------------------------
+# Ejecutar
+# -----------------------------
 if __name__ == "__main__":
-    model = train_optimized_cpu()
+    train_yolo(model_type="m", epochs=100)
