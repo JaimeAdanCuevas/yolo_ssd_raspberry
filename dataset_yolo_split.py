@@ -97,10 +97,10 @@ names: {class_names}
     return split_counts
 
 if __name__ == "__main__":
-    image_dir = "/home/root/dataset/DATASET2K/images"
-    annotation_dir = "/home/root/dataset/DATASET2K/labels"
-    output_dir = "/home/root/dataset/DATASET2K/DATASET2K_split"
-    classes_file = "/home/root/dataset/DATASET2K/classes.txt"
+    image_dir = "/home/root/dataset/DATASET2K_tiled_2000x1500/images"
+    annotation_dir = "/home/root/dataset/DATASET2K_tiled_2000x1500/labels"
+    output_dir = "/home/root/dataset/DATASET2K_tiled_2000x1500/DATASET2K_split"
+    classes_file = "/home/root/dataset/DATASET2K_tiled_2000x1500/classes.txt"
 
     try:
         split_counts = split_dataset(image_dir, annotation_dir, output_dir, classes_file)

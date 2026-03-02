@@ -4,13 +4,13 @@ from ultralytics import YOLO
 # -----------------------------
 # Dataset
 # -----------------------------
-DATASET_PATH = Path("/home/root/dataset/DATASET2K/DATASET2K_split")
-DATA_YAML = DATASET_PATH / "data_3classes.yaml"  # 4 clases merged
+DATASET_PATH = Path("/home/root/dataset/DATASET2K_tiled_2000x1500/DATASET2K_split")
+DATA_YAML = DATASET_PATH / "data.yaml"  # 5 clases merged
 
 # -----------------------------
 # Entrenamiento YOLOv8
 # -----------------------------
-def train_yolo(model_type="m", epochs=100, batch=64, imgsz=640):
+def train_yolo(model_type="l", epochs=100, batch=64, imgsz=640):
 
     model = YOLO(f"yolov8{model_type}.pt")
 
@@ -21,7 +21,7 @@ def train_yolo(model_type="m", epochs=100, batch=64, imgsz=640):
         imgsz=imgsz,
         device="cpu",
         project="runs",
-        name="yolov8m_removed-darkred_merge-boton_green",
+        name="yolov8l_final_5classes",
         exist_ok=True,
 
         optimizer="SGD",
@@ -63,4 +63,4 @@ def train_yolo(model_type="m", epochs=100, batch=64, imgsz=640):
 # Ejecutar
 # -----------------------------
 if __name__ == "__main__":
-    train_yolo(model_type="m", epochs=100)
+    train_yolo(model_type="l", epochs=100)
