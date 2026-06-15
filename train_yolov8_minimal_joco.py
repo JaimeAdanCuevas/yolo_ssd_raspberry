@@ -5,12 +5,12 @@ from ultralytics import YOLO
 # Dataset
 # -----------------------------
 DATASET_PATH = Path("/home/root/dataset/DATASET2K_tiled_2000x1500/DATASET2K_split")
-DATA_YAML = DATASET_PATH / "data.yaml"  # 5 clases merged
+DATA_YAML = DATASET_PATH / "data_3classes.yaml"  # 5 clases merged
 
 # -----------------------------
-# Entrenamiento YOLOv8
+# YOLOv8 training.
 # -----------------------------
-def train_yolo(model_type="l", epochs=100, batch=64, imgsz=640):
+def train_yolo(model_type="x", epochs=100, batch=64, imgsz=640):
 
     model = YOLO(f"yolov8{model_type}.pt")
 
@@ -21,7 +21,7 @@ def train_yolo(model_type="l", epochs=100, batch=64, imgsz=640):
         imgsz=imgsz,
         device="cpu",
         project="runs",
-        name="yolov8l_final_5classes",
+        name="yolov8x_final_3classes",
         exist_ok=True,
 
         optimizer="SGD",
@@ -30,7 +30,7 @@ def train_yolo(model_type="l", epochs=100, batch=64, imgsz=640):
         momentum=0.937,
         weight_decay=0.0005,
 
-        patience=20,
+        patience=10,
         warmup_epochs=3,
 
         augment=True,
@@ -63,4 +63,4 @@ def train_yolo(model_type="l", epochs=100, batch=64, imgsz=640):
 # Ejecutar
 # -----------------------------
 if __name__ == "__main__":
-    train_yolo(model_type="l", epochs=100)
+    train_yolo(model_type="x", epochs=100)

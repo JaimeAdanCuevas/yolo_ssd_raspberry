@@ -60,18 +60,18 @@ Purpose:
 
 ---
 
-### 2.2 Merging Green and Boton Classes
+### 2.2 Merging Green and Bud Classes
 
 Script:
 
-merge_boton_green_after_darkred.py
+merge_bud_green_after_darkred.py
 
 
 Purpose:
 
 - Merges:
   - `green`
-  - `boton`
+  - `bud`
 - Executed after removing `darkred`
 - Produces a reduced 5-class dataset
 
@@ -207,6 +207,6 @@ Dataset with:
 
 darkred removed
 
-green and boton merged
+green and bud merged
 
 All experiments were trained with identical hyperparameters to ensure fair comparison.

@@ -11,9 +11,9 @@ DATASET_DIR = Path("/home/root/dataset/DATASET2K/DATASET2K_split")
 
 SPLITS = ["train", "val", "test"]
 
-# Mapa de clases final: merge Boton+Green -> Immature (0), conservar Orange como 3
+# Mapa de clases final: merge Bud+Green -> Immature (0), conservar Orange como 3
 CLASS_MAP = {
-    0: 0,  # Boton -> Immature
+    0: 0,  # Bud -> Immature
     3: 0,  # Green -> Immature
     1: 1,  # BrightRed C4
     2: 2,  # DarkRed C5

@@ -105,9 +105,9 @@ def train_yolo(model_type="s", epochs=80, batch=16, imgsz=640):
 # -----------------------------
 if __name__ == "__main__":
     # Configuración de oversampling según tus clases minoritarias
-    # IDs según data.yaml: ['Boton', 'BrightRed C4', 'DarkRed C5', 'Green', 'Orange(red dot)']
+    # IDs según data.yaml: ['Bud', 'BrightRed C4', 'DarkRed C5', 'Green', 'Orange(red dot)']
     oversample_config = {
-        "0": 5000,   # Boton
+        "0": 5000,   # Bud
         "2": 5000,   # DarkRed C5
         "4": 3000    # Orange(red dot)
     }

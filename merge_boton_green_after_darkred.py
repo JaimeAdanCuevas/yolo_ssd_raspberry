@@ -6,18 +6,18 @@ from pathlib import Path
 # -----------------------------
 # CONFIGURACIÓN
 # -----------------------------
-DATASET_DIR = Path("/home/root/dataset/DATASET2K/DATASET2K_split")
+DATASET_DIR = Path("/home/root/dataset/DATASET2K_tiled_2000x1500/DATASET2K_split")
 SPLITS = ["train", "val", "test"]
 
 # Dataset actual (4 clases)
-# 0 Boton
+# 0 Bud
 # 1 BrightRed
 # 2 Green
 # 3 Orange
 
 # Nuevo mapeo (3 clases)
 CLASS_MAP = {
-    0: 0,  # Boton -> Immature
+    0: 0,  # Bud -> Immature
     2: 0,  # Green -> Immature
     1: 1,  # BrightRed C4
     3: 2   # Orange(red dot)

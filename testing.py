@@ -8,14 +8,14 @@ from PIL import Image
 
 # Define class colors
 CLASS_COLORS = {
-    0: (255, 0, 0),    # Boton - Red
+    0: (255, 0, 0),    # Bud - Red
     1: (0, 0, 255),    # BrightRed C4 - Blue  
     2: (128, 0, 128),  # DarkRed C5 - Purple
     3: (0, 255, 0),    # Green - Green
     4: (0, 255, 255)   # Orange(red dot) - Yellow
 }
 
-CLASS_NAMES = ['Boton', 'BrightRed C4', 'DarkRed C5', 'Green', 'Orange(red dot)']
+CLASS_NAMES = ['Bud', 'BrightRed C4', 'DarkRed C5', 'Green', 'Orange(red dot)']
 
 def draw_bboxes_pil(image, bboxes, classes):
     """Draw bounding boxes on PIL image"""

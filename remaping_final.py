@@ -9,7 +9,7 @@ DATASET_DIR = Path("/home/root/dataset/DATASET2K/DATASET2K_split")
 SPLITS = ["train", "val", "test"]
 
 # Clases según data.yaml actual
-CLASSES = ['Boton', 'BrightRed C4', 'DarkRed C5', 'Green', 'Orange(red dot)']
+CLASSES = ['Bud', 'BrightRed C4', 'DarkRed C5', 'Green', 'Orange(red dot)']
 
 # -----------------------------
 # Funciones

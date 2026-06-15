@@ -6,7 +6,7 @@ from pathlib import Path
 # -----------------------------
 # CONFIGURACIÓN
 # -----------------------------
-DATASET_DIR = Path("/home/root/dataset/DATASET2K/DATASET2K_split")
+DATASET_DIR = Path("/home/root/dataset/DATASET2K_tiled_2000x1500/DATASET2K_split")
 SPLITS = ["train", "val", "test"]
 
 # Clase a eliminar
@@ -14,7 +14,7 @@ REMOVE_CLASS = 2  # DarkRed C5
 
 # Nuevas clases después de eliminar DarkRed
 CLASS_NAMES = [
-    "Boton",
+    "Bud",
     "BrightRed C4",
     "Green",
     "Orange(red dot)"
