@@ -1,0 +1,6 @@
+train: /home/root/dataset/DATASET2K_tiled_2000x1500/DATASET2K_split/train/images
+val: /home/root/dataset/DATASET2K_tiled_2000x1500/DATASET2K_split/val/images
+test: /home/root/dataset/DATASET2K_tiled_2000x1500/DATASET2K_split/test/images
+
+nc: 3
+names: ['Immature', 'BrightRed C4', 'Orange(red dot)']
