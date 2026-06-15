@@ -1,0 +1,6 @@
+
+train: /home/root/dataset/DATASET2K_tiled_2000x1500/DATASET2K_split/train/images
+val: /home/root/dataset/DATASET2K_tiled_2000x1500/DATASET2K_split/val/images
+test: /home/root/dataset/DATASET2K_tiled_2000x1500/DATASET2K_split/test/images
+nc: 5
+names: ['Bud', 'BrightRed C4', 'DarkRed C5', 'Green', 'Orange(red dot)']
